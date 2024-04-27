@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -29,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import com.example.econoise.ui.components.NoiseMap
+import com.example.econoise.ui.screens.RecordScreen
 import com.example.econoise.ui.theme.EcoNoiseTheme
 import kotlinx.coroutines.delay
 import java.io.File
@@ -40,48 +42,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val recorder = NoiseRecorder(this)
-
         setContent {
-            val context = LocalContext.current
-            var currentDb by rememberSaveable { mutableDoubleStateOf(0.0) }
-
-//            LaunchedEffect(key1 = true) {
-//                val recorder = MediaRecorder(context)
-//
-//                recorder.setAudioSource(AudioSource.MIC)
-//                recorder.setOutputFormat(OutputFormat.THREE_GPP)
-//                recorder.setAudioEncoder(AudioEncoder.AMR_NB)
-//                recorder.setOutputFile("${externalCacheDir!!.absolutePath}/output.3gp")
-//                recorder.prepare()
-//
-//                recorder.start()
-//                recorder.maxAmplitude
-//                while (true) {
-//                    val amp = recorder.maxAmplitude
-//                    val db = 20.0 * log10(amp / 2700.0)
-//                    currentDb = db
-//                    delay(1000)
-//                }
-//
-//                recorder.stop()
-//                recorder.reset()
-//                recorder.release()
-//            }
-
-            LaunchedEffect(key1 = true) {
-                while(true) {
-                    val amps = recorder.recordAmplitudes(1)
-                    currentDb = amps[0]
-                }
-            }
-
             EcoNoiseTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Text(
-                        text = "$currentDb",
-                        style = MaterialTheme.typography.headlineLarge
-                    )
+                    RecordScreen()
                 }
             }
         }
