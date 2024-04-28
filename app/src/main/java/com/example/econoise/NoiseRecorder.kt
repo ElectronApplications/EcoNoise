@@ -7,15 +7,24 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.util.Log
+import androidx.compose.runtime.collectAsState
 import androidx.core.app.ActivityCompat
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.sqrt
 
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+
 class NoiseRecorder(
-    context: Context,
-    private var calibrated: Int? = null
+    private val context: Context
 ) {
     private var recorder: AudioRecord
 
@@ -56,15 +65,17 @@ class NoiseRecorder(
     }
 
     suspend fun calibrate(): Boolean {
-        val intervals = 10 * 1000 / SAMPLE_INTERVAL_MS
+        val intervals = 5 * 1000 / SAMPLE_INTERVAL_MS
 
         val maxAmps = (0..<intervals).map { recordRaw().max() }
 
         val mean = maxAmps.sum().toDouble() / maxAmps.size
         val std = sqrt(maxAmps.sumOf { (mean - it).pow(2) } / maxAmps.size)
-
+        Log.d("hmm", "$std")
         return if (std < 1000) {
-            calibrated = maxAmps.min()
+            context.dataStore.edit {
+                it[intPreferencesKey("calibration")] = maxAmps.min()
+            }
             true
         } else {
             false
@@ -72,13 +83,14 @@ class NoiseRecorder(
     }
 
     suspend fun recordInterval(): Double {
-        if (calibrated == null)
-            throw RuntimeException()
+        val calibration = context.dataStore.data.map {
+            it[intPreferencesKey("calibration")]
+        }.first() ?: throw RuntimeException()
 
         val amps = recordRaw()
 
         val maxAmp = amps.max()
-        return 20.0 * log10(maxAmp.toDouble() / calibrated!!)
+        return 20.0 * log10(maxAmp.toDouble() / calibration)
     }
 
     companion object {
