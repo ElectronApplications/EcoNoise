@@ -8,7 +8,7 @@ import io.ktor.serialization.kotlinx.json.json
 
 val httpClient = HttpClient(CIO) {
     defaultRequest {
-        url("https://05c1-92-51-45-202.ngrok-free.app")
+        url("https://2106-92-51-45-202.ngrok-free.app")
     }
     install(ContentNegotiation) {
         json()

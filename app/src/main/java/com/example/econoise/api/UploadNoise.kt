@@ -1,5 +1,6 @@
 package com.example.econoise.api
 
+import android.util.Log
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -22,6 +23,7 @@ data class UploadNoiseApiRequest(
 )
 
 suspend fun uploadNoise(latitude: Double, longitude: Double, decibels: Double, frequency: Double) {
+    Log.d("REQUEST uploadNoise", "$latitude $longitude $decibels")
     httpClient.post {
         url {
             appendPathSegments("api", "noises/")

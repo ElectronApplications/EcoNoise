@@ -72,14 +72,14 @@ class NoiseRecorder(
         val mean = maxAmps.sum().toDouble() / maxAmps.size
         val std = sqrt(maxAmps.sumOf { (mean - it).pow(2) } / maxAmps.size)
         Log.d("hmm", "$std")
-        return if (std < 1000) {
+//        return if (std < 3000) {
             context.dataStore.edit {
                 it[intPreferencesKey("calibration")] = maxAmps.min()
             }
-            true
-        } else {
-            false
-        }
+            return true
+//        } else {
+//            false
+//        }
     }
 
     suspend fun recordInterval(): Double {

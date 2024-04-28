@@ -1,6 +1,9 @@
 package com.example.econoise.ui.screens
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Looper
@@ -15,6 +18,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -36,8 +40,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.datastore.preferences.core.intPreferencesKey
 import com.example.econoise.NoiseRecorder
+import com.example.econoise.R
+import com.example.econoise.api.getNoiseAt
 import com.example.econoise.api.uploadNoise
 import com.example.econoise.dataStore
 import com.google.android.gms.location.LocationCallback
@@ -47,6 +55,8 @@ import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import okhttp3.internal.notify
+import kotlin.random.Random
 
 @Composable
 fun RecordScreen() {
@@ -223,6 +233,50 @@ fun RecordScreen() {
             }
         ) {
             Text("Сделать замеры")
+        }
+
+        LaunchedEffect(key1 = true) {
+            while (true) {
+                var location: Location? = null
+                val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+
+                val locationRequest = LocationRequest.create()
+                    .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                    .setInterval(1000)
+                    .setFastestInterval(100)
+
+                fusedLocationClient.requestLocationUpdates(locationRequest, object: LocationCallback() {
+                    override fun onLocationResult(loc: LocationResult?) {
+                        location = loc?.lastLocation
+                    }
+                }, Looper.getMainLooper())
+
+                while (location == null) {
+                    delay(1000)
+                }
+
+                val noiseResult = getNoiseAt(location!!.latitude, location!!.longitude)
+                Log.d("HII", "${noiseResult.averageDecibels}")
+                if (noiseResult.averageDecibels > 30) {
+                    val notificationBuilder = NotificationCompat.Builder(context, "eco-noise-channel")
+                        .setSmallIcon(R.drawable.ic_launcher_foreground)
+                        .setContentTitle("ШУМНО!!!")
+                        .setContentText("Вы находитесь в очень шумной зоне")
+                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+                    val channel = NotificationChannel("eco-noise-channel", "EcoNoise", NotificationManager.IMPORTANCE_DEFAULT)
+                    channel.description = "Шумомер"
+
+                    val notificationManager: NotificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    notificationManager.createNotificationChannel(channel)
+
+                    with(NotificationManagerCompat.from(context)) {
+                        notify(Random.nextInt(), notificationBuilder.build())
+                    }
+                }
+
+                delay(1000 * 60)
+            }
         }
     }
 }
